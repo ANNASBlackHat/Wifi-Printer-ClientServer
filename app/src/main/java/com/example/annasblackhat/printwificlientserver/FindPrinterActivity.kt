@@ -19,7 +19,7 @@ class FindPrinterActivity : AppCompatActivity(), DiscoveryListener, AdapterView.
 
     private var mPrinterList: ArrayList<HashMap<String, String>>? = null
     private var mPrinterListAdapter: SimpleAdapter? = null
-    private val mFilterOption = FilterOption()
+    private lateinit var  mFilterOption: FilterOption
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +35,7 @@ class FindPrinterActivity : AppCompatActivity(), DiscoveryListener, AdapterView.
         list_view.onItemClickListener = this
         btn_refresh.setOnClickListener { refreshFinder() }
 
+        mFilterOption = FilterOption()
         mFilterOption.deviceType = Discovery.TYPE_PRINTER
         mFilterOption.epsonFilter = Discovery.FILTER_NAME
 

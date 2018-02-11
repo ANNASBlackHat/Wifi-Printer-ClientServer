@@ -2,17 +2,19 @@ package com.example.annasblackhat.printwificlientserver
 
 import android.os.Build
 import android.widget.Toast
+import com.google.gson.Gson
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.io.OutputStream
 import java.io.PrintStream
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
-import kotlin.concurrent.thread
 
 /**
  * Created by annasblackhat on 11/02/18.
  */
-class Server(val mainActivity: MainActivity) {
+class Server(val mainActivity: MainActivity, val printerManager: PrinterManager) {
 
     companion object {
         val socketServerPORT = 8043
@@ -27,7 +29,6 @@ class Server(val mainActivity: MainActivity) {
 
     inner class SocketServerThread : Thread() {
         var count = 0
-
         override fun run() {
             mainActivity.runOnUiThread{ mainActivity.toast("Starting...") }
 
@@ -49,6 +50,8 @@ class Server(val mainActivity: MainActivity) {
 
                     val socketServerReplyThread = SocketServerReplyThread(socket, count)
                     socketServerReplyThread.start()
+
+                    SocketCommunicationThread(socket).start()
                 }
             } catch (e: Exception) {
                 mainActivity.runOnUiThread{ mainActivity.toast("Error. "+e.message) }
@@ -71,6 +74,19 @@ class Server(val mainActivity: MainActivity) {
                 mainActivity.runOnUiThread { mainActivity.toast("Sending reply Error. "+e.message) }
             }
 
+        }
+    }
+
+    inner class SocketCommunicationThread(val socket: Socket?): Thread(){
+        override fun run() {
+            val input = BufferedReader(InputStreamReader(socket?.getInputStream()))
+            while (!Thread.currentThread().isInterrupted){
+                try {
+                    val pendingPrint = Gson().fromJson(input.readLine(), PendingPrintEntity::class.java)
+                    printerManager.addToQueue(pendingPrint)
+                } catch (e: Exception) {
+                }
+            }
         }
     }
 
