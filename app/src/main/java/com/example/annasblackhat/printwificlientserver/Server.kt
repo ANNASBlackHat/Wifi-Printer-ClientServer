@@ -1,15 +1,13 @@
 package com.example.annasblackhat.printwificlientserver
 
-import android.os.Build
+
 import android.widget.Toast
 import com.google.gson.Gson
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStream
-import java.io.PrintStream
+import java.io.*
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import kotlin.concurrent.thread
 
 /**
  * Created by annasblackhat on 11/02/18.
@@ -17,7 +15,7 @@ import java.net.Socket
 class Server(val mainActivity: MainActivity, val printerManager: PrinterManager) {
 
     companion object {
-        val socketServerPORT = 8043
+        val socketServerPORT = 2893
     }
 
     private var serverSocket: ServerSocket? = null
@@ -48,43 +46,75 @@ class Server(val mainActivity: MainActivity, val printerManager: PrinterManager)
                     println("xxx IP Address : $ipAddress")
                     mainActivity.runOnUiThread{ mainActivity.toast("$count Client Connected!") }
 
-                    val socketServerReplyThread = SocketServerReplyThread(socket, count)
-                    socketServerReplyThread.start()
+//                    SocketCommunicationThread(socket, count).start()
 
-                    SocketCommunicationThread(socket).start()
+                    val input = DataInputStream(socket?.getInputStream())
+                    thread(true){
+                        while (true){
+                            val msgClient = input.readUTF()
+                            println("FROM CLIENT : $msgClient")
+                            try {
+                                val pendingPrint = Gson().fromJson(msgClient, PendingPrintEntity::class.java)
+                                printerManager.addToQueue(pendingPrint)
+                            } catch (e: Exception) {
+                                println("Parse error. $e")
+                            }
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 mainActivity.runOnUiThread{ mainActivity.toast("Error. "+e.message) }
             }
         }
     }
+//
+//    inner class SocketServerReplyThread(val socket: Socket?, val count: Int): Thread(){
+//        override fun run() {
+//            var outputStream: OutputStream?
+//            var msgReply = "Hello #$count You are connected to ${Build.BRAND} ${Build.MODEL}"
+//            println("Try sending reply..")
+//            try {
+//                outputStream = socket?.getOutputStream()
+//                val printStream = PrintStream(outputStream)
+//                printStream.print(msgReply)
+//                printStream.close()
+//                println("Reply sent...")
+//            } catch (e: Exception) {
+//                mainActivity.runOnUiThread { mainActivity.toast("Sending reply Error. "+e.message) }
+//            }
+//
+//        }
+//    }
 
-    inner class SocketServerReplyThread(val socket: Socket?, val count: Int): Thread(){
+    inner class SocketCommunicationThread(val socket: Socket?, val count: Int): Thread(){
         override fun run() {
-            var outputStream: OutputStream?
-            var msgReply = "Hello #$count You are connected to ${Build.BRAND} ${Build.MODEL}"
-            println("Try sending reply..")
-            try {
-                outputStream = socket?.getOutputStream()
-                val printStream = PrintStream(outputStream)
-                printStream.print(msgReply)
-                printStream.close()
-                println("Reply sent...")
-            } catch (e: Exception) {
-                mainActivity.runOnUiThread { mainActivity.toast("Sending reply Error. "+e.message) }
-            }
+            //sending message to new connected device
+//            var outputStream: OutputStream?
+//            var msgReply = "Hello #$count You are connected to ${Build.BRAND} ${Build.MODEL}"
+//            println("Try sending reply..")
+//            try {
+//                outputStream = socket?.getOutputStream()
+//                val printStream = PrintStream(outputStream)
+//                printStream.print(msgReply)
+//                printStream.close()
+//                println("Reply sent...")
+//            } catch (e: Exception) {
+//                mainActivity.runOnUiThread { mainActivity.toast("Sending reply Error. "+e.message) }
+//            }
 
-        }
-    }
 
-    inner class SocketCommunicationThread(val socket: Socket?): Thread(){
-        override fun run() {
             val input = BufferedReader(InputStreamReader(socket?.getInputStream()))
-            while (!Thread.currentThread().isInterrupted){
+            while (true){
                 try {
-                    val pendingPrint = Gson().fromJson(input.readLine(), PendingPrintEntity::class.java)
-                    printerManager.addToQueue(pendingPrint)
+                    val request = input.readLine()
+                    println("From client : $request")
+                    if(request != null && request.isNotEmpty()){
+                        mainActivity.runOnUiThread { mainActivity.toast("Get data from client! ($request)") }
+                        val pendingPrint = Gson().fromJson(input.readLine(), PendingPrintEntity::class.java)
+                        printerManager.addToQueue(pendingPrint)
+                    }
                 } catch (e: Exception) {
+                    println("Parsing error. $e")
                 }
             }
         }

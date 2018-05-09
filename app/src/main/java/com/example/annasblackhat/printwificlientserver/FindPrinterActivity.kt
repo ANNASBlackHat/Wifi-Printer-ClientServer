@@ -13,6 +13,7 @@ import com.epson.epos2.discovery.FilterOption
 import android.widget.SimpleAdapter
 import kotlinx.android.synthetic.main.activity_find_printer.*
 import android.content.Intent
+import android.view.MenuItem
 
 
 class FindPrinterActivity : AppCompatActivity(), DiscoveryListener, AdapterView.OnItemClickListener {
@@ -24,6 +25,7 @@ class FindPrinterActivity : AppCompatActivity(), DiscoveryListener, AdapterView.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_find_printer)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         mPrinterList = ArrayList()
         mPrinterListAdapter = SimpleAdapter(this, mPrinterList, R.layout.list_at,
@@ -86,6 +88,11 @@ class FindPrinterActivity : AppCompatActivity(), DiscoveryListener, AdapterView.
             mPrinterList?.add(item)
             mPrinterListAdapter?.notifyDataSetChanged()
         }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        finish()
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {

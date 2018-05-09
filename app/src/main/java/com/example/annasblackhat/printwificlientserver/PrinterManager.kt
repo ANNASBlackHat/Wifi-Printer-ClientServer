@@ -27,7 +27,7 @@ class PrinterManager(val context: Context) {
                         printWifi(index+1)
                     }
                 }
-            }, printerName = data.printerName)
+            }, printerName = data.printerName, id = data.id)
         }else{
             isPrinting = false
         }
